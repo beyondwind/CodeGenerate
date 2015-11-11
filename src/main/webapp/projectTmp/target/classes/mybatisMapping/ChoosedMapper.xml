@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper 
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ml.lijiabei.templete.dao.ChoosedDao">
+	<resultMap type="ml.lijiabei.templete.domain.Choosed" id="choosedResult">
+		<id property="id" column="id" />
+		<result property="pid" column="pid" />
+		<result property="userName" column="username" />
+	</resultMap>
+
+	<!-- select -->
+	<select id="selectChoosedById" parameterType="ml.lijiabei.templete.bo.QueryChoosedBO"
+		resultMap="choosedResult">
+		SELECT id,pid,username FROM choosed WHERE id=#{id}
+	</select>
+
+	<select id="selectChoosedList" parameterType="ml.lijiabei.templete.bo.QueryChoosedBO"
+		resultMap="choosedResult">
+		SELECT id,pid,username FROM choosed LIMIT 100
+	</select>
+
+	<!-- insert -->
+	<insert id="insertChoosed" parameterType="ml.lijiabei.templete.domain.Choosed">
+		<selectKey resultType="java.lang.Integer" keyProperty="id"
+			order="AFTER">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		INSERT INTO
+		choosed(id,pid,username)
+		VALUES(null,#{pid},#{userName})
+	</insert>
+
+	<!-- update -->
+	<update id="updateChoosed" parameterType="ml.lijiabei.templete.domain.Choosed">
+		UPDATE choosed SET
+		pid=#{pid},
+		username=#{userName}
+		WHERE id=#{id}
+	</update>
+
+	<!-- delete -->
+	<delete id="deleteChoosed" parameterType="ml.lijiabei.templete.domain.Choosed">
+		DELETE FROM choosed
+		WHERE id=#{id}
+	</delete>
+
+</mapper>

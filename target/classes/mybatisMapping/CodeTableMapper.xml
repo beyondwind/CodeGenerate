@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE mapper   
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ml.lijiabei.dao.CodeTableDao">
+
+	<resultMap type="ml.lijiabei.entity.CodeTable" id="CodeTableMap">
+		<result property="table_name" column="table_name" />
+		<result property="table_comments" column="table_comments" />
+		<collection property="columns" ofType="ml.lijiabei.entity.CodeColumn">
+			<result property="column_name" column="column_name" />
+			<result property="column_type" column="data_type" />
+			<result property="is_primary" column="is_primary" />
+			<result property="column_comments" column="comments" />
+		</collection>
+	</resultMap>
+
+	<select id="queryList" parameterType="java.util.HashMap"
+		resultMap="CodeTableMap" resultType="ml.lijiabei.entity.CodeTable">
+		<choose>
+			<when test='type =="oracle"'>
+				select tt.table_name,tc.comments
+				table_comments,nls_LOWER(ct.column_name)
+				column_name,ct.data_type,cc.COMMENTS,tt.owner,REPLACE(NVL(cst.constraint_type,'0'),'P','1')
+				is_primary from
+				all_tables tt
+				join user_tab_comments tc on
+				tt.TABLE_NAME=tc.TABLE_NAME
+				join user_tab_columns ct on ct.table_name
+				=tc.table_name
+				join user_col_comments cc on ct.table_name =
+				cc.table_name and
+				ct.column_name = cc.column_name
+				left join (select
+				au.constraint_type,cu.column_name,au.table_name
+				from
+				user_cons_columns cu, user_constraints au where
+				cu.constraint_name=au.constraint_name
+				and au.constraint_type = 'P')
+				cst on tt.TABLE_NAME= cst.table_name and
+				cst.column_name=ct.column_name
+				where tt.owner=#{owner}
+				order by
+				ct.table_name
+			</when>
+			<otherwise>
+				select t.TABLE_NAME,t.TABLE_COMMENT
+				table_comments,lower(c.COLUMN_NAME)
+				column_name,c.DATA_TYPE,c.COLUMN_COMMENT
+				comments,replace(c.COLUMN_KEY,'PRI','1') is_primary
+				from TABLES
+				t,COLUMNS c where t.TABLE_NAME=c.TABLE_NAME and
+				t.TABLE_SCHEMA=c.TABLE_SCHEMA
+				and t.TABLE_SCHEMA=#{owner} order by
+				t.TABLE_NAME,c.ORDINAL_POSITION
+			</otherwise>
+		</choose>
+	</select>
+
+
+	<!--oracle主键 select constraint_name,table_name from user_constraints where 
+		constraint_type='P' and OWNER='JWGL2'; -->
+
+	<!--mysql主键 select TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME,COLUMN_TYPE,COLUMN_KEY 
+		from COLUMNS where TABLE_SCHEMA='mnote'; -->
+
+
+	<!-- select TABLE_NAME,TABLE_COMMENT,TABLE_SCHEMA from TABLES where TABLE_SCHEMA 
+		='mnote'; -->
+	<!-- select COLUMN_NAME,DATA_TYPE,COLUMN_TYPE,TABLE_NAME from COLUMNS where 
+		TABLE_SCHEMA='mnote'; -->
+	<!-- select t.TABLE_NAME,t.TABLE_COMMENT table_comments,c.COLUMN_NAME,c.DATA_TYPE,c.COLUMN_COMMENT 
+		comments from TABLES t,COLUMNS c where t.TABLE_NAME=c.TABLE_NAME and t.TABLE_SCHEMA=c.TABLE_SCHEMA 
+		and t.TABLE_SCHEMA='mnote'; -->
+</mapper>

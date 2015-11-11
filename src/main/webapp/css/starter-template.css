@@ -1,0 +1,16 @@
+body {
+  padding-top: 50px;
+}
+.starter-template {
+  padding: 20px 15px;
+  text-align: left;
+}
+.panel-primary>.panel-footer {
+	border-color: #337ab7;
+}
+.pager {
+	margin:0px;
+}
+hr{
+	margin:10px 0px;
+}

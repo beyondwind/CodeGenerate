@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans      
+http://www.springframework.org/schema/beans/spring-beans-3.1.xsd                          
+http://www.springframework.org/schema/context              
+http://www.springframework.org/schema/context/spring-context-3.1.xsd              
+http://www.springframework.org/schema/aop              
+http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+http://www.springframework.org/schema/tx              
+http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
+
+
+	<!-- 加载读取properties配置文件参数 -->
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="ignoreResourceNotFound" value="true" />
+		<property name="locations">
+			<list>
+				<value>classpath:jdbc.properties</value>
+			</list>
+		</property>
+	</bean>
+	<!-- 导入属性配置文件 <context:property-placeholder location="classpath:jdbc.properties" 
+		/> -->
+	<!-- 配置数据库连接池，使用dbcp -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.databaseurl}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<!-- 连接池启动时的初始值 -->
+		<property name="initialSize" value="1" />
+		<!-- 连接池的最大值 -->
+		<property name="maxActive" value="500" />
+		<!-- 最大空闲值.当经过一个高峰时间后， 连接池可以慢慢将已经用不到的连接慢慢释放一部分，一直减少到maxIdle为止 -->
+		<property name="maxIdle" value="2" />
+		<!-- 最小空闲值.当空闲的连接数少于阀值时， 连接池就会预申请去一些连接，以免洪峰来时来不及申请 -->
+		<property name="minIdle" value="1" />
+	</bean>
+
+	<!-- MyBatis定义数据源,同意加载配置 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<property name="dataSource" ref="dataSource" />
+		<!-- <property name="mapperLocations" value="classpath*:mappers-*.xml" 
+			/> -->
+	</bean>
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+
+	<context:component-scan base-package="com.enjoyor.*">
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+	<!-- 可不指定特定mapper，而使用自动扫描包的方式来注册各种Mapper ，配置如下： -->
+	<bean id="sqlMapperConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.enjoyor.mapper" />
+	</bean>
+
+	<!-- 配置事务管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 申明事务通知 -->
+	<tx:advice id="txAdivice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="save*" isolation="READ_COMMITTED"
+				propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="update*" isolation="READ_COMMITTED"
+				propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="del*" isolation="READ_COMMITTED"
+				propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="query*" propagation="NOT_SUPPORTED"
+				isolation="DEFAULT" rollback-for="java.io.IOException"
+				no-rollback-for="java.lang.ArithmeticException,java.lang.*" timeout="30"
+				read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 将通知和切入点联接 -->
+	<aop:config>
+		<!-- 分开配置 -->
+		<aop:pointcut expression="execution(* com.enjoyor.service.impl..*.*(..))"
+			id="allServiceMethod" />
+		<aop:advisor advice-ref="txAdivice" pointcut-ref="allServiceMethod" />
+		<!-- 一起配置 -->
+		<!-- <aop:advisor advice-ref="txAdivice" pointcut="exection(* com.skillmuster.core.service.*ServiceImpl.*(..))" 
+			/> -->
+	</aop:config>
+
+</beans>  
